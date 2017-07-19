@@ -319,9 +319,9 @@ class PlanningGraph():
             if new_node_a.prenodes.issubset(s_at_level):    
                 new_set.add(new_node_a)
                 for s_node in s_at_level:
-                    #if s_node in new_node_a.prenodes:
-                    s_node.children.add(new_node_a)
-                    new_node_a.prenodes.add(s_node)
+                    if s_node in new_node_a.prenodes:
+                        s_node.children.add(new_node_a)
+                        new_node_a.prenodes.add(s_node)
         self.a_levels.append(new_set)
 
 
@@ -343,7 +343,7 @@ class PlanningGraph():
         #   all of the new S nodes as children of all the A nodes that could produce them, and likewise add the A nodes to the
         #   parent sets of the S nodes
 
-        new_set = set()
+       
         self.s_levels.append(set())
         for literal in self.a_levels[level-1]:
             s_nodes = literal.effnodes
@@ -352,6 +352,15 @@ class PlanningGraph():
                 s_node.parents.add(literal)
             self.s_levels[level] |= s_nodes
 
+       # new_set = set()
+       # a_at_level = self.a_levels[level-1]
+       # for a_node in a_at_level:
+       #     s_nodes = a_node.effnodes
+       #     for s_node in s_nodes:
+       #         new_set.add(s_node)
+       #         s_node.parents.add(a_node)
+       #         a_node.children.add(s_node)
+       # self.s_levels.append(new_set) 
 
     def update_a_mutex(self, nodeset):
         """ Determine and update sibling mutual exclusion for A-level nodes
@@ -544,10 +553,43 @@ class PlanningGraph():
         level_sum = 0
         # TODO implement
         # for each goal in the problem, determine the level cost, then add them together
+
+
+
         
+        def create_literal_aux(s_node: PgNode_s):
+            #print(s_node.is_pos)
+            if s_node.is_pos:
+                e = expr(s_node.symbol)
+                return e
+            else:
+                e = expr('~{}'.format(s_node.symbol))
+                return e
+
+        def find_level(goal, level):
+            for s_node in  self.s_levels[level]:
+                literal = create_literal_aux(s_node)
+                print(type(goal))
+                print('goal:{},literal:{}'.format(goal, literal) )
+                print(goal==literal)
+                
+                if goal == literal:
+                    return level
+            return None
+
+        levels = [] 
+        nr_level = range(len(self.s_levels))
+        print(self.problem.goal)
+        goals = self.problem.goal
+        for g in goals:
+            print('goal: {}'.format(g))
+            for l in nr_level:
+                print('level: {}'.format(l))
+                found = find_level(g, l)
+                if found is not  None:
+                    levels.append(found)  
+                    break
         
-        levels = [l for l in range(len(self.s_levels)) for s_node in self.s_levels[l] if self.problem.goal == s_node.symbol]
-         
         from functools import reduce
         level_sum = reduce((lambda x, y: x+y), levels, level_sum)
         return level_sum
