@@ -303,23 +303,25 @@ class PlanningGraph():
         :return:
             adds A nodes to the current level in self.a_levels[level]
         """
-        # TODO add action A level to the planning graph as described in the Russell-Norvig text
+        # Add action A level to the planning graph as described in the Russell-Norvig text
         # 1. determine what actions to add and create those PgNode_a objects
         # 2. connect the nodes to the previous S literal level
         # for example, the A0 level will iterate through all possible actions for the problem and add a PgNode_a to a_levels[0]
         #   set iff all prerequisite literals for the action hold in S0.  This can be accomplished by testing
         #   to see if a proposed PgNode_a has prenodes that are a subset of the previous S level.  Once an
         #   action node is added, it MUST be connected to the S node instances in the appropriate s_level set.
+        
         new_set = set()
         s_at_level = self.s_levels[level]
+        
         for action in self.all_actions:
             new_node_a = PgNode_a(action)
             if new_node_a.prenodes.issubset(s_at_level):    
                 new_set.add(new_node_a)
                 for s_node in s_at_level:
-                    if s_node in new_node_a.prenodes:
-                        s_node.children.add(new_node_a)
-                        new_node_a.prenodes.add(s_node)
+                    #if s_node in new_node_a.prenodes:
+                    s_node.children.add(new_node_a)
+                    new_node_a.prenodes.add(s_node)
         self.a_levels.append(new_set)
 
 
@@ -332,7 +334,7 @@ class PlanningGraph():
         :return:
             adds S nodes to the current level in self.s_levels[level]
         """
-        # TODO add literal S level to the planning graph as described in the Russell-Norvig text
+        # Add literal S level to the planning graph as described in the Russell-Norvig text
         # 1. determine what literals to add
         # 2. connect the nodes
         # for example, every A node in the previous level has a list of S nodes in effnodes that represent the effect
@@ -341,7 +343,7 @@ class PlanningGraph():
         #   all of the new S nodes as children of all the A nodes that could produce them, and likewise add the A nodes to the
         #   parent sets of the S nodes
 
-        #new_set = set()
+        new_set = set()
         self.s_levels.append(set())
         for literal in self.a_levels[level-1]:
             s_nodes = literal.effnodes
@@ -349,7 +351,6 @@ class PlanningGraph():
             for s_node in s_nodes:
                 s_node.parents.add(literal)
             self.s_levels[level] |= s_nodes
-
 
 
     def update_a_mutex(self, nodeset):
@@ -435,8 +436,7 @@ class PlanningGraph():
         :param node_a2: PgNode_a
         :return: bool
         """
-        # TODO test for Interference between nodes
-        
+               
         a1_add = node_a1.action.effect_add
         a1_rem = node_a1.action.effect_add
         a2_add = node_a1.action.effect_add
@@ -544,4 +544,10 @@ class PlanningGraph():
         level_sum = 0
         # TODO implement
         # for each goal in the problem, determine the level cost, then add them together
+        
+        
+        levels = [l for l in range(len(self.s_levels)) for s_node in self.s_levels[l] if self.problem.goal == s_node.symbol]
+         
+        from functools import reduce
+        level_sum = reduce((lambda x, y: x+y), levels, level_sum)
         return level_sum
